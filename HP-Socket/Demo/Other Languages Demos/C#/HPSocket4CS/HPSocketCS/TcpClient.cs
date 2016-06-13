@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
-using HPSocketCS.SDK;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -14,8 +13,8 @@ namespace HPSocketCS
     {
         public delegate HandleResult OnPrepareConnectEventHandler(TcpClient sender, uint socket);
         public delegate HandleResult OnConnectEventHandler(TcpClient sender);
-        public delegate HandleResult OnSendEventHandler(TcpClient sender, IntPtr pData, int length);
-        public delegate HandleResult OnReceiveEventHandler(TcpClient sender, IntPtr pData, int length);
+        public delegate HandleResult OnSendEventHandler(TcpClient sender, byte[] bytes);
+        public delegate HandleResult OnReceiveEventHandler(TcpClient sender, byte[] bytes);
         public delegate HandleResult OnCloseEventHandler(TcpClient sender, SocketOperation enOperation, int errorCode);
     }
 
@@ -83,13 +82,13 @@ namespace HPSocketCS
             }
 
 
-            pListener = HPSocketSdk.Create_HP_TcpClientListener();
+            pListener = Sdk.Create_HP_TcpClientListener();
             if (pListener == IntPtr.Zero)
             {
                 return false;
             }
 
-            pClient = HPSocketSdk.Create_HP_TcpClient(pListener);
+            pClient = Sdk.Create_HP_TcpClient(pListener);
             if (pClient == IntPtr.Zero)
             {
                 return false;
@@ -109,12 +108,12 @@ namespace HPSocketCS
 
             if (pClient != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpClient(pClient);
+                Sdk.Destroy_HP_TcpClient(pClient);
                 pClient = IntPtr.Zero;
             }
             if (pListener != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpClientListener(pListener);
+                Sdk.Destroy_HP_TcpClientListener(pListener);
                 pListener = IntPtr.Zero;
             }
 
@@ -124,8 +123,8 @@ namespace HPSocketCS
         /// <summary>
         /// 启动通讯组件并连接到服务器
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="port"></param>
+        /// <param name="address">远程地址</param>
+        /// <param name="port">远程端口</param>
         /// <param name="async">是否异步</param>
         /// <returns></returns>
         public bool Connetion(string address, ushort port, bool async = false)
@@ -146,7 +145,37 @@ namespace HPSocketCS
 
             this.SetCallback();
 
-            return HPSocketSdk.HP_Client_Start(pClient, address, port, async);
+            return Sdk.HP_Client_Start(pClient, address, port, async);
+        }
+
+
+        /// <summary>
+        /// 启动通讯组件并连接到服务器
+        /// </summary>
+        /// <param name="address">远程地址</param>
+        /// <param name="port">远程端口</param>
+        /// <param name="bindAddress">本地绑定到哪个ip?,多ip下可以选择绑定到指定ip</param>
+        /// <param name="async">是否异步</param>
+        /// <returns></returns>
+        public bool Connetion(string address, ushort port, string bindAddress, bool async = false)
+        {
+            if (string.IsNullOrEmpty(address) == true)
+            {
+                throw new Exception("address is null");
+            }
+            else if (port == 0)
+            {
+                throw new Exception("port is zero");
+            }
+
+            if (IsStarted == true)
+            {
+                return false;
+            }
+
+            this.SetCallback();
+
+            return Sdk.HP_Client_StartWithBindAddress(pClient, address, port, async, bindAddress);
         }
 
         /// <summary>
@@ -159,7 +188,7 @@ namespace HPSocketCS
             {
                 return false;
             }
-            return HPSocketSdk.HP_Client_Stop(pClient);
+            return Sdk.HP_Client_Stop(pClient);
         }
 
         /// <summary>
@@ -171,7 +200,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public bool Send(byte[] bytes, int size)
         {
-            return HPSocketSdk.HP_Client_Send(pClient, bytes, size);
+            return Sdk.HP_Client_Send(pClient, bytes, size);
         }
 
         /// <summary>
@@ -183,7 +212,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public bool Send(IntPtr bufferPtr, int size)
         {
-            return HPSocketSdk.HP_Client_Send(pClient, bufferPtr, size);
+            return Sdk.HP_Client_Send(pClient, bufferPtr, size);
         }
 
 
@@ -223,7 +252,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public bool Send(byte[] bytes, int offset, int size)
         {
-            return HPSocketSdk.HP_Client_SendPart(pClient, bytes, size, offset);
+            return Sdk.HP_Client_SendPart(pClient, bytes, size, offset);
         }
 
         /// <summary>
@@ -236,7 +265,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public bool Send(IntPtr bufferPtr, int offset, int size)
         {
-            return HPSocketSdk.HP_Client_SendPart(pClient, bufferPtr, size, offset);
+            return Sdk.HP_Client_SendPart(pClient, bufferPtr, size, offset);
         }
 
         /// <summary>
@@ -250,7 +279,7 @@ namespace HPSocketCS
         /// <returns>TRUE.成功,FALSE.失败，可通过 SYSGetLastError() 获取 Windows 错误代码</returns>
         public bool SendPackets(WSABUF[] buffers, int count)
         {
-            return HPSocketSdk.HP_Client_SendPackets(pClient, buffers, count);
+            return Sdk.HP_Client_SendPackets(pClient, buffers, count);
         }
 
 
@@ -311,7 +340,7 @@ namespace HPSocketCS
         /// <returns>TRUE.成功,FALSE.失败，可通过 SYSGetLastError() 获取 Windows 错误代码</returns>
         public bool SendSmallFile(string filePath, ref WSABUF head, ref WSABUF tail)
         {
-            return HPSocketSdk.HP_TcpClient_SendSmallFile(pClient, filePath, ref head, ref tail);
+            return Sdk.HP_TcpClient_SendSmallFile(pClient, filePath, ref head, ref tail);
         }
 
         /// <summary>
@@ -363,7 +392,7 @@ namespace HPSocketCS
             byte[] tailBuffer = null;
             if (tail != null)
             {
-                StructureToByte<T1>(head);
+                tailBuffer = StructureToByte<T2>(tail);
             }
             return SendSmallFile(filePath, headBuffer, tailBuffer);
         }
@@ -375,7 +404,7 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_Client_GetLastError(pClient);
+                return Sdk.HP_Client_GetLastError(pClient);
             }
         }
 
@@ -386,7 +415,7 @@ namespace HPSocketCS
         {
             get
             {
-                IntPtr ptr = HPSocketSdk.HP_Client_GetLastErrorDesc(pClient);
+                IntPtr ptr = Sdk.HP_Client_GetLastErrorDesc(pClient);
                 string desc = Marshal.PtrToStringUni(ptr);
                 return desc;
             }
@@ -399,7 +428,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public bool GetPendingDataLength(ref int length)
         {
-            return HPSocketSdk.HP_Client_GetPendingDataLength(pClient, ref length);
+            return Sdk.HP_Client_GetPendingDataLength(pClient, ref length);
         }
 
 
@@ -425,7 +454,7 @@ namespace HPSocketCS
                 ptr = Marshal.AllocHGlobal(Marshal.SizeOf(obj));
                 Marshal.StructureToPtr(obj, ptr, false);
             }
-            HPSocketSdk.HP_Client_SetExtra(pClient, ptr);
+            Sdk.HP_Client_SetExtra(pClient, ptr);
         }
 
         /// <summary>
@@ -438,7 +467,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public IntPtr GetExtra()
         {
-            return HPSocketSdk.HP_Client_GetExtra(pClient);
+            return Sdk.HP_Client_GetExtra(pClient);
         }
 
         /// <summary>
@@ -454,7 +483,7 @@ namespace HPSocketCS
 
             StringBuilder sb = new StringBuilder(ipLength);
 
-            bool ret = HPSocketSdk.HP_Client_GetLocalAddress(pClient, sb, ref ipLength, ref port);
+            bool ret = Sdk.HP_Client_GetLocalAddress(pClient, sb, ref ipLength, ref port);
             if (ret == true)
             {
                 ip = sb.ToString();
@@ -473,7 +502,7 @@ namespace HPSocketCS
                 {
                     return false;
                 }
-                return HPSocketSdk.HP_Client_HasStarted(pClient);
+                return Sdk.HP_Client_HasStarted(pClient);
             }
         }
 
@@ -484,7 +513,7 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_Client_GetState(pClient);
+                return Sdk.HP_Client_GetState(pClient);
             }
 
         }
@@ -496,7 +525,7 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_Client_GetConnectionID(pClient);
+                return Sdk.HP_Client_GetConnectionID(pClient);
             }
 
         }
@@ -509,11 +538,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_Client_GetFreeBufferPoolSize(pClient);
+                return Sdk.HP_Client_GetFreeBufferPoolSize(pClient);
             }
             set
             {
-                HPSocketSdk.HP_Client_SetFreeBufferPoolSize(pClient, value);
+                Sdk.HP_Client_SetFreeBufferPoolSize(pClient, value);
             }
         }
 
@@ -524,11 +553,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_Client_GetFreeBufferPoolHold(pClient);
+                return Sdk.HP_Client_GetFreeBufferPoolHold(pClient);
             }
             set
             {
-                HPSocketSdk.HP_Client_SetFreeBufferPoolHold(pClient, value);
+                Sdk.HP_Client_SetFreeBufferPoolHold(pClient, value);
             }
         }
 
@@ -540,11 +569,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_TcpClient_GetSocketBufferSize(pClient);
+                return Sdk.HP_TcpClient_GetSocketBufferSize(pClient);
             }
             set
             {
-                HPSocketSdk.HP_TcpClient_SetSocketBufferSize(pClient, value);
+                Sdk.HP_TcpClient_SetSocketBufferSize(pClient, value);
             }
         }
 
@@ -555,11 +584,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_TcpClient_GetKeepAliveTime(pClient);
+                return Sdk.HP_TcpClient_GetKeepAliveTime(pClient);
             }
             set
             {
-                HPSocketSdk.HP_TcpClient_SetKeepAliveTime(pClient, value);
+                Sdk.HP_TcpClient_SetKeepAliveTime(pClient, value);
             }
         }
 
@@ -570,11 +599,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_TcpClient_GetKeepAliveInterval(pClient);
+                return Sdk.HP_TcpClient_GetKeepAliveInterval(pClient);
             }
             set
             {
-                HPSocketSdk.HP_TcpClient_SetKeepAliveInterval(pClient, value);
+                Sdk.HP_TcpClient_SetKeepAliveInterval(pClient, value);
             }
         }
 
@@ -586,34 +615,34 @@ namespace HPSocketCS
         /// <returns></returns>
         public string GetSocketErrorDesc(SocketError code)
         {
-            IntPtr ptr = HPSocketSdk.HP_GetSocketErrorDesc(code);
+            IntPtr ptr = Sdk.HP_GetSocketErrorDesc(code);
             string desc = Marshal.PtrToStringUni(ptr);
             return desc;
         }
 
         ///////////////////////////////////////////////////////////////////////////////////////
-        HPSocketCS.SDK.HPSocketSdk.OnPrepareConnect _OnPrepareConnect = null;
-        HPSocketCS.SDK.HPSocketSdk.OnConnect _OnConnect = null;
-        HPSocketCS.SDK.HPSocketSdk.OnReceive _OnReceive = null;
-        HPSocketCS.SDK.HPSocketSdk.OnSend _OnSend = null;
-        HPSocketCS.SDK.HPSocketSdk.OnClose _OnClose = null;
+        Sdk.OnPrepareConnect _OnPrepareConnect = null;
+        Sdk.OnConnect _OnConnect = null;
+        Sdk.OnReceive _OnReceive = null;
+        Sdk.OnSend _OnSend = null;
+        Sdk.OnClose _OnClose = null;
         /// <summary>
         /// 设置回调函数
         /// </summary>
         protected virtual void SetCallback()
         {
             // 设置 Socket 监听器回调函数
-            _OnPrepareConnect = new HPSocketSdk.OnPrepareConnect(SDK_OnPrepareConnect);
-            _OnConnect = new HPSocketSdk.OnConnect(SDK_OnConnect);
-            _OnSend = new HPSocketSdk.OnSend(SDK_OnSend);
-            _OnReceive = new HPSocketSdk.OnReceive(SDK_OnReceive);
-            _OnClose = new HPSocketSdk.OnClose(SDK_OnClose);
+            _OnPrepareConnect = new Sdk.OnPrepareConnect(SDK_OnPrepareConnect);
+            _OnConnect = new Sdk.OnConnect(SDK_OnConnect);
+            _OnSend = new Sdk.OnSend(SDK_OnSend);
+            _OnReceive = new Sdk.OnReceive(SDK_OnReceive);
+            _OnClose = new Sdk.OnClose(SDK_OnClose);
 
-            HPSocketSdk.HP_Set_FN_Client_OnPrepareConnect(pListener, _OnPrepareConnect);
-            HPSocketSdk.HP_Set_FN_Client_OnConnect(pListener, _OnConnect);
-            HPSocketSdk.HP_Set_FN_Client_OnSend(pListener, _OnSend);
-            HPSocketSdk.HP_Set_FN_Client_OnReceive(pListener, _OnReceive);
-            HPSocketSdk.HP_Set_FN_Client_OnClose(pListener, _OnClose);
+            Sdk.HP_Set_FN_Client_OnPrepareConnect(pListener, _OnPrepareConnect);
+            Sdk.HP_Set_FN_Client_OnConnect(pListener, _OnConnect);
+            Sdk.HP_Set_FN_Client_OnSend(pListener, _OnSend);
+            Sdk.HP_Set_FN_Client_OnReceive(pListener, _OnReceive);
+            Sdk.HP_Set_FN_Client_OnClose(pListener, _OnClose);
         }
 
         protected HandleResult SDK_OnPrepareConnect(IntPtr pClient, uint socket)
@@ -638,7 +667,9 @@ namespace HPSocketCS
         {
             if (OnSend != null)
             {
-                return OnSend(this, pData, length);
+                byte[] bytes = new byte[length];
+                Marshal.Copy(pData, bytes, 0, length);
+                return OnSend(this, bytes);
             }
             return HandleResult.Ignore;
         }
@@ -647,12 +678,14 @@ namespace HPSocketCS
         {
             if (OnReceive != null)
             {
-                return OnReceive(this, pData, length);
+                byte[] bytes = new byte[length];
+                Marshal.Copy(pData, bytes, 0, length);
+                return OnReceive(this, bytes);
             }
             return HandleResult.Ignore;
         }
 
-         protected HandleResult SDK_OnClose(IntPtr pClient, SocketOperation enOperation, int errorCode)
+        protected HandleResult SDK_OnClose(IntPtr pClient, SocketOperation enOperation, int errorCode)
         {
             if (OnClose != null)
             {
@@ -668,7 +701,7 @@ namespace HPSocketCS
         /// </summary>
         public int SYSGetLastError()
         {
-            return HPSocketSdk.SYS_GetLastError();
+            return Sdk.SYS_GetLastError();
         }
 
         /// <summary>
@@ -676,7 +709,7 @@ namespace HPSocketCS
         /// </summary>
         public int SYSWSAGetLastError()
         {
-            return HPSocketSdk.SYS_WSAGetLastError();
+            return Sdk.SYS_WSAGetLastError();
         }
 
         /// <summary>
@@ -691,7 +724,7 @@ namespace HPSocketCS
         /// 
         public int SYS_SetSocketOption(IntPtr sock, int level, int name, IntPtr val, int len)
         {
-            return HPSocketSdk.SYS_SetSocketOption(sock, level, name, val, len);
+            return Sdk.SYS_SetSocketOption(sock, level, name, val, len);
         }
 
         /// <summary>
@@ -706,7 +739,7 @@ namespace HPSocketCS
         /// 
         public int SYSGetSocketOption(IntPtr sock, int level, int name, IntPtr val, ref int len)
         {
-            return HPSocketSdk.SYS_GetSocketOption(sock, level, name, val, ref len);
+            return Sdk.SYS_GetSocketOption(sock, level, name, val, ref len);
         }
         /// <summary>
         /// 调用系统的 ioctlsocket()
@@ -718,7 +751,7 @@ namespace HPSocketCS
         /// 
         public int SYSIoctlSocket(IntPtr sock, long cmd, IntPtr arg)
         {
-            return HPSocketSdk.SYS_IoctlSocket(sock, cmd, arg);
+            return Sdk.SYS_IoctlSocket(sock, cmd, arg);
         }
 
         /// <summary>
@@ -735,7 +768,7 @@ namespace HPSocketCS
         public int SYS_WSAIoctl(IntPtr sock, uint dwIoControlCode, IntPtr lpvInBuffer, uint cbInBuffer,
                                               IntPtr lpvOutBuffer, uint cbOutBuffer, uint lpcbBytesReturned)
         {
-            return HPSocketSdk.SYS_WSAIoctl(sock, dwIoControlCode, lpvInBuffer, cbInBuffer,
+            return Sdk.SYS_WSAIoctl(sock, dwIoControlCode, lpvInBuffer, cbInBuffer,
                                             lpvOutBuffer, cbOutBuffer, lpcbBytesReturned);
         }
 
@@ -805,6 +838,28 @@ namespace HPSocketCS
             {
                 IFormatter formatter = new BinaryFormatter();
                 return formatter.Deserialize(ms);
+            }
+        }
+
+        /// <summary>
+        /// byte[]转结构体
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public T BytesToStruct<T>(byte[] bytes)
+        {
+            Type strcutType = typeof(T);
+            int size = Marshal.SizeOf(strcutType);
+            IntPtr buffer = Marshal.AllocHGlobal(size);
+            try
+            {
+                Marshal.Copy(bytes, 0, buffer, size);
+                return (T)Marshal.PtrToStructure(buffer, strcutType);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
             }
         }
     }

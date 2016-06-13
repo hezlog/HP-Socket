@@ -195,10 +195,10 @@ namespace TcpPullClientNS
             return HandleResult.Ok;
         }
 
-        HandleResult OnSend(TcpClient sender, IntPtr pData, int length)
+        HandleResult OnSend(TcpClient sender, byte[] bytes)
         {
             // 客户端发数据了
-            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", sender.ConnectionId, length));
+            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", sender.ConnectionId, bytes.Length));
 
             return HandleResult.Ok;
         }

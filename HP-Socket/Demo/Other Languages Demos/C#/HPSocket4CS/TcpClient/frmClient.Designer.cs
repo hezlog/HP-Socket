@@ -1,4 +1,4 @@
-﻿namespace TcpClientNS
+﻿namespace SSLClientNS
 {
     partial class frmClient
     {

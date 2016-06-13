@@ -1,4 +1,4 @@
-﻿namespace TcpServer_PFM
+﻿namespace SSLServerNS
 {
     partial class frmServer
     {

@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Threading;
 
-namespace TcpClientNS
+namespace SSLClientNS
 {
     public enum AppState
     {
@@ -153,8 +153,6 @@ namespace TcpClientNS
                     // 正在执行
                     throw new Exception("being implemented");
                 }
-
-
 
                 IntPtr connId = client.ConnectionId;
 
@@ -305,28 +303,29 @@ namespace TcpClientNS
             return HandleResult.Ok;
         }
 
-        HandleResult OnSend(TcpClient sender, IntPtr pData, int length)
+        HandleResult OnSend(TcpClient sender, byte[] bytes)
         {
             // 客户端发数据了
-            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", sender.ConnectionId, length));
+            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", sender.ConnectionId, bytes.Length));
 
             return HandleResult.Ok;
         }
 
-        HandleResult OnReceive(TcpClient sender, IntPtr pData, int length)
+        HandleResult OnReceive(TcpClient sender, byte[] bytes)
         {
             // 数据到达了
             if (isSendFile == true)
             {
                 // 如果发送了文件,并接收到了返回数据
                 isSendFile = false;
-                MyFileInfo myFile = (MyFileInfo)Marshal.PtrToStructure(pData, typeof(MyFileInfo));
+
+                MyFileInfo myFile = client.BytesToStruct<MyFileInfo>(bytes);
                 int objSize = Marshal.SizeOf(myFile);
                 // 因为没有附加尾数据,所以大小可以用length - objSize
-                byte[] bytes = new byte[length - objSize];
-                Marshal.Copy(pData + objSize, bytes, 0, length - objSize);
+                byte[] contentBytes = new byte[bytes.Length - objSize];
+                Array.ConstrainedCopy(bytes, objSize, contentBytes, 0, contentBytes.Length);
 
-                string txt = Encoding.Default.GetString(bytes);
+                string txt = Encoding.Default.GetString(contentBytes);
                 string msg = string.Empty;
                 if (txt.Length > 100)
                 {
@@ -342,9 +341,6 @@ namespace TcpClientNS
             }
             else if (studentType != StudentType.None)
             {
-                byte[] bytes = new byte[length];
-                Marshal.Copy(pData, bytes, 0, length);
-
                 switch (studentType)
                 {
                     case StudentType.Array:
@@ -370,7 +366,7 @@ namespace TcpClientNS
             }
             else
             {
-                AddMsg(string.Format(" > [{0},OnReceive] -> ({1} bytes)", sender.ConnectionId, length));
+                AddMsg(string.Format(" > [{0},OnReceive] -> ({1} bytes)", sender.ConnectionId, bytes.Length));
             }
 
             return HandleResult.Ok;

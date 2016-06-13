@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TcpClientNS.Properties {
+namespace SSLClientNS.Properties {
     using System;
     
     

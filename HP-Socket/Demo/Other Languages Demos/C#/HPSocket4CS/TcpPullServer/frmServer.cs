@@ -29,7 +29,7 @@ namespace TcpPullServer
         // 包头大小
         int pkgHeaderSize = Marshal.SizeOf(new PkgHeader());
 
-        private string title = "Echo TcpPullServer [ 'C' - clear list box ]";
+        private string title = "Echo-TcpPullServer [ 'C' - clear list box ]";
         public frmServer()
         {
             InitializeComponent();
@@ -178,12 +178,12 @@ namespace TcpPullServer
             return HandleResult.Ok;
         }
 
-        HandleResult OnSend(IntPtr connId, IntPtr pData, int length)
+        HandleResult OnSend(IntPtr connId, byte[] bytes)
         {
             // 服务器发数据了
 
 
-            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", connId, length));
+            AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", connId, bytes.Length));
 
             return HandleResult.Ok;
         }

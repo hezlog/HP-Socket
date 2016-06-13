@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using HPSocketCS;
 using System.Threading;
 
-namespace TcpServer_PFM
+namespace SSLServerNS
 {
     public enum AppState
     {
@@ -191,65 +191,28 @@ namespace TcpServer_PFM
             return HandleResult.Ok;
         }
 
-        HandleResult OnSend(IntPtr connId, IntPtr pData, int length)
+        HandleResult OnSend(IntPtr connId, byte[] bytes)
         {
             // 服务器发数据了
-            Interlocked.Add(ref totalSent, length);
+            Interlocked.Add(ref totalSent, bytes.Length);
 
             //AddMsg(string.Format(" > [{0},OnSend] -> ({1} bytes)", connId, length));
 
             return HandleResult.Ok;
         }
 
-        HandleResult OnReceive(IntPtr connId, IntPtr pData, int length)
+        HandleResult OnReceive(IntPtr connId, byte[] bytes)
         {
             // 数据到达了
 
-            Interlocked.Add(ref totalReceived, length);
+            Interlocked.Add(ref totalReceived, bytes.Length);
 
-            if (server.Send(connId, pData, length))
+            if (server.Send(connId, bytes, bytes.Length))
             {
                 return HandleResult.Ok;
             }
 
             return HandleResult.Error;
-
-            /*try
-            {*/
-            /*
-            // 从pData中获取字符串
-            // string str = Marshal.PtrToStringAnsi(pData, length);
-
-            // intptr转byte[]
-            // byte[] bytes = new byte[length];
-            // Marshal.Copy(pData, bytes, 0, length);
-
-
-            // 获取附加数据
-            IntPtr clientPtr = IntPtr.Zero;
-            if (server.GetConnectionExtra(connId, ref clientPtr))
-            {
-                // ci 就是accept里传入的附加数据了
-                ClientInfo ci = (ClientInfo)Marshal.PtrToStructure(clientPtr, typeof(ClientInfo));
-                AddMsg(string.Format(" > [{0},OnReceive] -> {1}:{2} ({3} bytes)", ci.ConnId, ci.IpAddress, ci.Port, length));
-            }
-            else
-            {
-                AddMsg(string.Format(" > [{0},OnReceive] -> ({1} bytes)", connId, length));
-            }
-
-            if (server.Send(connId, pData, length))
-            {
-                return HandleResult.Ok;
-            }
-
-            return HandleResult.Error;*/
-            /*}
-            catch (Exception)
-            {
-                return HandleResult.IGNORE;
-            }*/
-
 
         }
 

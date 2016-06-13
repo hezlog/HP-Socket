@@ -2,17 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using HPSocketCS.SDK;
 
 namespace HPSocketCS
 {
     public class TcpPackAgent : TcpAgent
     {
-        public TcpPackAgent()
-        {
-            CreateListener();
-        }
-
         /// <summary>
         /// 创建socket监听&服务组件
         /// </summary>
@@ -24,13 +18,13 @@ namespace HPSocketCS
                 return false;
             }
 
-            pListener = HPSocketSdk.Create_HP_TcpAgentListener();
+            pListener = Sdk.Create_HP_TcpAgentListener();
             if (pListener == IntPtr.Zero)
             {
                 return false;
             }
 
-            pAgent = HPSocketSdk.Create_HP_TcpPackAgent(pListener);
+            pAgent = Sdk.Create_HP_TcpPackAgent(pListener);
             if (pAgent == IntPtr.Zero)
             {
                 return false;
@@ -50,12 +44,12 @@ namespace HPSocketCS
 
             if (pAgent != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpPackAgent(pAgent);
+                Sdk.Destroy_HP_TcpPackAgent(pAgent);
                 pAgent = IntPtr.Zero;
             }
             if (pListener != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpAgentListener(pListener);
+                Sdk.Destroy_HP_TcpAgentListener(pListener);
                 pListener = IntPtr.Zero;
             }
 
@@ -70,11 +64,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_TcpPackAgent_GetMaxPackSize(pAgent);
+                return Sdk.HP_TcpPackAgent_GetMaxPackSize(pAgent);
             }
             set
             {
-                HPSocketSdk.HP_TcpPackAgent_SetMaxPackSize(pAgent, value);
+                Sdk.HP_TcpPackAgent_SetMaxPackSize(pAgent, value);
             }
         }
 
@@ -86,11 +80,11 @@ namespace HPSocketCS
         {
             get
             {
-                return HPSocketSdk.HP_TcpPackAgent_GetPackHeaderFlag(pAgent);
+                return Sdk.HP_TcpPackAgent_GetPackHeaderFlag(pAgent);
             }
             set
             {
-                HPSocketSdk.HP_TcpPackAgent_SetPackHeaderFlag(pAgent, value);
+                Sdk.HP_TcpPackAgent_SetPackHeaderFlag(pAgent, value);
             }
         }
 

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
-using HPSocketCS.SDK;
 
 namespace HPSocketCS
 {
@@ -19,11 +18,7 @@ namespace HPSocketCS
         /// 数据到达事件
         /// </summary>
         public new event TcpPullServerEvent.OnReceiveEventHandler OnReceive;
-
-        public TcpPullServer()
-        {
-            CreateListener();
-        }
+        
 
         /// <summary>
         /// 创建socket监听&服务组件
@@ -36,13 +31,13 @@ namespace HPSocketCS
                 return false;
             }
 
-            pListener = HPSocketSdk.Create_HP_TcpPullServerListener();
+            pListener = Sdk.Create_HP_TcpPullServerListener();
             if (pListener == IntPtr.Zero)
             {
                 return false;
             }
 
-            pServer = HPSocketSdk.Create_HP_TcpPullServer(pListener);
+            pServer = Sdk.Create_HP_TcpPullServer(pListener);
             if (pServer == IntPtr.Zero)
             {
                 return false;
@@ -53,12 +48,12 @@ namespace HPSocketCS
             return true;
         }
 
-        HPSocketCS.SDK.HPSocketSdk.OnPullReceive _OnReceive = null;
+        Sdk.OnPullReceive _OnReceive = null;
 
         protected override void SetCallback()
         {
-            _OnReceive = new HPSocketSdk.OnPullReceive(SDK_OnReceive);
-            HPSocketSdk.HP_Set_FN_Server_OnPullReceive(pListener, _OnReceive);
+            _OnReceive = new Sdk.OnPullReceive(SDK_OnReceive);
+            Sdk.HP_Set_FN_Server_OnPullReceive(pListener, _OnReceive);
             base.SetCallback();
         }
 
@@ -81,7 +76,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public FetchResult Fetch(IntPtr connId, IntPtr pBuffer, int size)
         {
-            return HPSocketSdk.HP_TcpPullServer_Fetch(pServer, connId, pBuffer, size);
+            return Sdk.HP_TcpPullServer_Fetch(pServer, connId, pBuffer, size);
         }
 
         /// <summary>
@@ -94,7 +89,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public FetchResult Peek(IntPtr connId, IntPtr pBuffer, int size)
         {
-            return HPSocketSdk.HP_TcpPullServer_Peek(pServer, connId, pBuffer, size);
+            return Sdk.HP_TcpPullServer_Peek(pServer, connId, pBuffer, size);
         }
 
 
@@ -107,12 +102,12 @@ namespace HPSocketCS
 
             if (pServer != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpPullServer(pServer);
+                Sdk.Destroy_HP_TcpPullServer(pServer);
                 pServer = IntPtr.Zero;
             }
             if (pListener != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpPullServerListener(pListener);
+                Sdk.Destroy_HP_TcpPullServerListener(pListener);
                 pListener = IntPtr.Zero;
             }
             IsCreate = false;

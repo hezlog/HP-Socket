@@ -263,18 +263,18 @@ namespace TcpClient_PFM
             return HandleResult.Ok;
         }
 
-        HandleResult OnSend(TcpClient sender, IntPtr pData, int length)
+        HandleResult OnSend(TcpClient sender, byte[] bytes)
         {
             // 客户端发数据了
-            Interlocked.Add(ref TotalSent, length);
+            Interlocked.Add(ref TotalSent, bytes.Length);
             return HandleResult.Ok;
         }
 
-        HandleResult OnReceive(TcpClient sender, IntPtr pData, int length)
+        HandleResult OnReceive(TcpClient sender, byte[] bytes)
         {
             // 数据到达了
 
-            Interlocked.Add(ref TotalReceived, length);
+            Interlocked.Add(ref TotalReceived, bytes.Length);
             if (TotalReceived == ExpectReceived)
             {
                 StopWatch.Stop();

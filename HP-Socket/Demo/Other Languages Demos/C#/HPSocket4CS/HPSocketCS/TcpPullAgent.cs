@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using HPSocketCS.SDK;
 
 namespace HPSocketCS
 {
@@ -14,15 +13,7 @@ namespace HPSocketCS
     {
         protected new TcpPullAgentEvent.OnReceiveEventHandler OnReceive;
 
-        public TcpPullAgent()
-        {
-            CreateListener();
-        }
 
-        ~TcpPullAgent()
-        {
-            Destroy();
-        }
 
         /// <summary>
         /// 创建socket监听&服务组件
@@ -35,13 +26,13 @@ namespace HPSocketCS
                 return false;
             }
 
-            pListener = HPSocketSdk.Create_HP_TcpPullAgentListener();
+            pListener = Sdk.Create_HP_TcpPullAgentListener();
             if (pListener == IntPtr.Zero)
             {
                 return false;
             }
 
-            pAgent = HPSocketSdk.Create_HP_TcpPullAgent(pListener);
+            pAgent = Sdk.Create_HP_TcpPullAgent(pListener);
             if (pAgent == IntPtr.Zero)
             {
                 return false;
@@ -62,7 +53,7 @@ namespace HPSocketCS
         /// <returns></returns>
         public FetchResult Fetch(IntPtr connId, IntPtr pBuffer, int size)
         {
-            return HPSocketSdk.HP_TcpPullAgent_Fetch(pAgent, connId, pBuffer, size);
+            return Sdk.HP_TcpPullAgent_Fetch(pAgent, connId, pBuffer, size);
         }
 
         /// <summary>
@@ -75,10 +66,10 @@ namespace HPSocketCS
         /// <returns></returns>
         public FetchResult Peek(IntPtr connId, IntPtr pBuffer, int size)
         {
-            return HPSocketSdk.HP_TcpPullAgent_Peek(pAgent, connId, pBuffer, size);
+            return Sdk.HP_TcpPullAgent_Peek(pAgent, connId, pBuffer, size);
         }
 
-        HPSocketCS.SDK.HPSocketSdk.OnPullReceive _OnReceive = null;
+        Sdk.OnPullReceive _OnReceive = null;
 
         /// <summary>
         /// 设置回调函数
@@ -92,10 +83,10 @@ namespace HPSocketCS
         /// <param name="agentShutdown"></param>
         protected override void SetCallback()
         {
-            _OnReceive = new HPSocketSdk.OnPullReceive(SDK_OnReceive);
+            _OnReceive = new Sdk.OnPullReceive(SDK_OnReceive);
 
             // 设置 Socket 监听器回调函数
-            HPSocketSdk.HP_Set_FN_Agent_OnPullReceive(pListener, _OnReceive);
+            Sdk.HP_Set_FN_Agent_OnPullReceive(pListener, _OnReceive);
             base.SetCallback();
         }
 
@@ -117,12 +108,12 @@ namespace HPSocketCS
 
             if (pAgent != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpPullAgent(pAgent);
+                Sdk.Destroy_HP_TcpPullAgent(pAgent);
                 pAgent = IntPtr.Zero;
             }
             if (pListener != IntPtr.Zero)
             {
-                HPSocketSdk.Destroy_HP_TcpPullAgentListener(pListener);
+                Sdk.Destroy_HP_TcpPullAgentListener(pListener);
                 pListener = IntPtr.Zero;
             }
 

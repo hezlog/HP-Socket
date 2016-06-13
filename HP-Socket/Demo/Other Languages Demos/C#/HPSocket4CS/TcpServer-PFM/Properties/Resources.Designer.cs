@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TcpServer_PFM.Properties {
+namespace SSLServerNS.Properties {
     using System;
     
     
